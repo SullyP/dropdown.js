@@ -25,13 +25,14 @@
       },
       "dynamicOptLabel": "Add a new option..."
     },
-    init: function(options) {
-
+    init: function(options, noSaveOptions) {
+      noSaveOptions = noSaveOptions || false; //Optional parameter, default : false
+      var localOptions = methods.options;
       // Apply user options if user has defined some
-      if (options) {
-        options = $.extend(methods.options, options);
-      } else {
-        options = methods.options;
+      if (options && noSaveOptions) {
+        localOptions = $.extend({}, methods.options, options);
+      } else if (options) {
+        localOptions = $.extend(methods.options, options);
       }
 
       function initElement($select) {
@@ -49,7 +50,7 @@
 
         // Create the dropdown wrapper
         var $dropdown = $("<div></div>");
-        $dropdown.addClass("dropdownjs").addClass(options.dropdownClass);
+        $dropdown.addClass("dropdownjs").addClass(localOptions.dropdownClass);
         $dropdown.data("select", $select);
 
         // Create the fake input used as "select" element and cache it as $input
@@ -72,7 +73,7 @@
         $select.find("option").each(function() {
           // Cache $(this)
           var $this = $(this);
-          methods._addOption($ul, $this);
+          methods._addOption($ul, $this, localOptions);
 
         });
 
@@ -80,7 +81,7 @@
         if (dynamicOptions) {
           $dynamicInput = $("<li class=dropdownjs-add></li>");
           $dynamicInput.append("<input>");
-          $dynamicInput.find("input").attr("placeholder", options.dynamicOptLabel);
+          $dynamicInput.find("input").attr("placeholder", localOptions.dynamicOptLabel);
           $ul.append($dynamicInput);
         }
 
@@ -99,7 +100,7 @@
                 $selected = $select.find("option, li").first();
                // $selected = $select.find("option").first();
             }
-            methods._select($dropdown, $selected);
+            methods._select($dropdown, $selected, localOptions);
         } else {
             var selectors = [], val = $select.val()
             for (var i in val) {
@@ -108,7 +109,7 @@
             if (selectors.length > 0) {
               var $target = $dropdown.find(selectors.join(','));
               $target.removeClass("selected");
-              methods._select($dropdown, $target);
+              methods._select($dropdown, $target, localOptions);
             }
         }
 
@@ -122,8 +123,8 @@
         $select.after($dropdown);
 
         // Call the callback
-        if (options.callback) {
-          options.callback($dropdown);
+        if (localOptions.callback) {
+          localOptions.callback($dropdown);
         }
 
         //---------------------------------------//
@@ -132,7 +133,7 @@
 
         // On click, set the clicked one as selected
         $ul.on("click", "li:not(.dropdownjs-add)", function(e) {
-          methods._select($dropdown, $(this));
+          methods._select($dropdown, $(this), localOptions);
           // trigger change event, if declared on the original selector
           $select.change();
         });
@@ -142,7 +143,7 @@
             return $input.removeClass("focus").blur();
           }
           if (e.which === 32 && !$(e.target).is("input")) {
-            methods._select($dropdown, $(this));
+            methods._select($dropdown, $(this), localOptions);
             return false;
           }
         });
@@ -174,7 +175,7 @@
           var $this = $(e.target);
           if (!$this.val().length) return;
 
-          methods._addOption($ul, $this);
+          methods._addOption($ul, $this, localOptions);
           $ul.find("li").not(".dropdownjs-add").attr("tabindex", 0);
 
         });
@@ -191,7 +192,7 @@
             else {
               $selected = $select.find("option, li").first();
             }
-            methods._select($dropdown, $selected);
+            methods._select($dropdown, $selected, localOptions);
           }, 100);
 
         });
@@ -208,7 +209,7 @@
             else {
               $selected = $select.find("option, li").first();
             }
-            methods._select($dropdown, $selected);
+            methods._select($dropdown, $selected, localOptions);
           } else {
             var target = $select.find(":selected");
             // Unselect all options
@@ -268,14 +269,14 @@
         });
       }
 
-      if (options.autoinit) {
+      if (localOptions.autoinit) {
         $(document).on("DOMNodeInserted", function(e) {
           var $this = $(e.target);
           if (!$this.is("select")) {
             $this = $this.find('select');
           }
             $this.each(function() {
-                if ($(this).is(options.autoinit)) {
+                if ($(this).is(localOptions.autoinit)) {
                     initElement($(this));
                 }
             });
@@ -287,11 +288,11 @@
         initElement($(this));
       });
     },
-    select: function(target) {
+    select: function(target, localOptions) {
       var $target = $(this).find("[value=\"" + target + "\"]");
-      methods._select($(this), $target);
+      methods._select($(this), $target, localOptions);
     },
-    _select: function($dropdown, $target) {
+    _select: function($dropdown, $target, localOptions) {
       if ($target.is(".dropdownjs-add")) return;
 
       // Get dropdown's elements
@@ -346,17 +347,17 @@
       }
 
        // Call the callback
-        if (this.options.onSelected) {
-            this.options.onSelected($target.attr("value"));
+        if (localOptions.onSelected) {
+            localOptions.onSelected($target.attr("value"));
         }
 
     },
-    _addOption: function($ul, $this) {
+    _addOption: function($ul, $this, localOptions) {
       // Create the option
       var $option = $("<li></li>");
 
       // Style the option
-      $option.addClass(this.options.optionClass);
+      $option.addClass(localOptions.optionClass);
 
       // If the option has some text then transfer it
       if ($this.text()) {
